@@ -1,0 +1,701 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "kube-aws Kubernetes cluster <%= cluster_name %>",
+  "Mappings": {
+    "RegionMap" : {
+      "eu-central-1": {
+        "stable": "ami-cfca25a0",
+        "beta": "ami-74b35c1b",
+        "alpha": "ami-3b1cf054"
+      },
+      "ap-northeast-1": {
+        "stable": "ami-72ae4313",
+        "beta": "ami-76917317",
+        "alpha": "ami-802dcde1"
+      },
+      "us-gov-west-1": {
+        "stable": "ami-c42b94a5",
+        "beta": "ami-4b338c2a",
+        "alpha": "ami-9041fef1"
+      },
+      "ap-northeast-2": {
+        "stable": "ami-83ce05ed",
+        "beta": "ami-b2b972dc",
+        "alpha": "ami-ccaa61a2"
+      },
+      "sa-east-1": {
+        "stable": "ami-038c076f",
+        "beta": "ami-65c24909",
+        "alpha": "ami-ee1b9382"
+      },
+      "ap-southeast-2": {
+        "stable": "ami-4b7a5428",
+        "beta": "ami-8387a8e0",
+        "alpha": "ami-55f6d936"
+      },
+      "ap-southeast-1": {
+        "stable": "ami-d704d5b4",
+        "beta": "ami-e1f02182",
+        "alpha": "ami-4c97462f"
+      },
+      "us-east-1": {
+        "stable": "ami-6160910c",
+        "beta": "ami-92b640ff",
+        "alpha": "ami-3cf20751"
+      },
+      "us-west-2": {
+        "stable": "ami-32a85152",
+        "beta": "ami-ee38c68e",
+        "alpha": "ami-c30af5a3"
+      },        
+      "us-west-1": {
+        "stable": "ami-79473c19",
+        "beta": "ami-530d7633",
+        "alpha": "ami-61e99101"
+      },
+      "eu-west-1": {
+        "stable": "ami-c36effb0",
+        "beta": "ami-69d7461a",
+        "alpha": "ami-2a118659"
+      }
+    }
+  },
+  "Parameters": {
+    "ClusterName": {
+      "Description" : "Kubernetes cluster name",
+      "Type" : "String",
+      "Default" : "<%= cluster_name %>"
+    },
+    "VnetCIDR" : {
+			"Description" : "CIDR Block for the entire VPC",
+			"Type"        : "String",
+			"Default"     : "<%= vnet_cidr %>",
+			"AllowedPattern" : "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+		},
+		"SubnetCIDR" : {
+			"Description" : "CIDR Block for the Subnet",
+			"Type"        : "String",
+			"Default"     : "<%= subnet_cidr %>",
+			"AllowedPattern" : "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+		},    
+    "CoreOSImageSku": {
+      "Description" : "CoreOS Image Channel on EC2",
+      "Type" : "String",
+      "Default" : "<%= coreos_image_sku %>",
+      "ConstraintDescription" : "Must be alpha, beta, or stable"      
+    },
+    "SSHKeyPair" : {
+      "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instance",
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Default": "<%= ssh_keyname %>",
+      "ConstraintDescription": "must be the name of an existing EC2 KeyPair."      
+    },
+    "MasterRootVolumeSize" : {
+      "Default": "<%= master_rootvolume_size %>",
+      "Description": "Master node's root volume size",
+      "Type": "Number"
+    },        
+    "WorkerRootVolumeSize" : {
+      "Default": "<%= worker_rootvolume_size %>",
+      "Description": "Worker node's root volume size",
+      "Type": "Number"
+    },     
+    "MasterInstanceType" : {
+      "Description" : "Master EC2 instance type (m3.medium, etc).",
+      "Type" : "String",
+      "Default" : "<%= master_instance_type %>",
+      "ConstraintDescription" : "Must be a valid EC2 instance type."
+    },
+    "WorkerInstanceType" : {
+      "Description" : "Worker EC2 instance type (m3.medium, etc).",
+      "Type" : "String",
+      "Default" : "<%= worker_instance_type %>",
+      "ConstraintDescription" : "Must be a valid EC2 instance type."
+    },    
+    "MasterHostName" : {
+      "Description" : "Master EC2 instance hostname",
+      "Type" : "String",
+      "Default" : "<%= master_hostname %>"
+    },        
+		"MasterHostIP" : {
+			"Description" : "Private IP address of the Master node",
+			"Type"        : "String",
+			"Default"     : "<%= master_ip %>",
+			"AllowedPattern" : "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})"
+		},      
+    "WorkerHostName" : {
+      "Description" : "Worker EC2 instance hostname",
+      "Type" : "String",
+      "Default" : "<%= cluster_name %>-worker"
+    },              
+    "WorkerCount" : {
+      "Default": "<%= worker_count %>",
+      "MinValue": "1",
+      "MaxValue": "12",
+      "Description": "Number of worker nodes in cluster (1-12).",
+      "Type": "Number"
+    },        
+    "MasterUserData" : {
+      "Description" : "cloud-config sting passed down to the master node VM",
+      "Type" : "String",
+      "Default" : "#cloud-config\n\ncoreos:\n  update:\n    reboot-strategy: 'off'\n"
+    },    
+    "WorkerUserData" : {
+      "Description" : "cloud-config string passed down to the worker node VM",
+      "Type" : "String",
+      "Default" : "#cloud-config\n\ncoreos:\n  update:\n    reboot-strategy: 'off'\n"
+    }        
+  },
+  "Resources": {
+    "MasterRecoverAlarm": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:aws:automate:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":ec2:recover"
+              ]
+            ]
+          }
+        ],
+        "AlarmDescription": "Trigger a recovery when system check fails for 5 consecutive minutes.",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "InstanceId",
+            "Value": {
+              "Ref": "MasterInstance"
+            }
+          }
+        ],
+        "EvaluationPeriods": "5",
+        "MetricName": "StatusCheckFailed_System",
+        "Namespace": "AWS/EC2",
+        "Period": "60",
+        "Statistic": "Minimum",
+        "Threshold": "0"
+      },
+      "Type": "AWS::CloudWatch::Alarm"
+    },
+    "WorkerAutoScale": {
+      "Properties": {
+        "AvailabilityZones": { "Fn::Select" : [ "0", { "Fn::GetAZs" : "" } ] },
+        "DesiredCapacity": { "Ref": "WorkerCount" },
+        "HealthCheckGracePeriod": 600,
+        "HealthCheckType": "EC2",
+        "LaunchConfigurationName": {
+          "Ref": "WorkerLaunchConfiguration"
+        },
+        "MaxSize": { "Ref": "WorkerCount" },
+        "MinSize": { "Ref": "WorkerCount" },
+        "Tags": [
+          {
+            "Key": "KubernetesCluster",
+            "PropagateAtLaunch": "true",
+            "Value": { "Ref": "ClusterName" }
+          },
+          {
+            "Key": "Name",
+            "PropagateAtLaunch": "true",
+            "Value": { "Ref": "WorkerHostName" }
+          }
+        ],
+        "VPCZoneIdentifier": [
+          {
+            "Ref": "Subnet"
+          }
+        ]
+      },
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "UpdatePolicy" : {
+	      "AutoScalingRollingUpdate" : {
+          "MinInstancesInService" : { "Ref": "WorkerCount" },
+          "MaxBatchSize" : "1",
+          "PauseTime" : "PT2M"
+	      }
+      }
+    },
+    "MasterEIP": {
+      "Properties": {
+        "Domain": "vpc",
+        "InstanceId": {
+          "Ref": "MasterInstance"
+        }
+      },
+      "Type": "AWS::EC2::EIP"
+    },
+    "MasterIAMInstanceProfile": {
+      "Properties": {
+        "Path": "/",
+        "Roles": [
+          {
+            "Ref": "IAMRoleMaster"
+          }
+        ]
+      },
+      "Type": "AWS::IAM::InstanceProfile"
+    },
+    "WorkerIAMInstanceProfile": {
+      "Properties": {
+        "Path": "/",
+        "Roles": [
+          {
+            "Ref": "IAMRoleWorker"
+          }
+        ]
+      },
+      "Type": "AWS::IAM::InstanceProfile"
+    },
+    "IAMRoleMaster": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sts:AssumeRole"
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.amazonaws.com"
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": "ec2:*",
+                  "Effect": "Allow",
+                  "Resource": "*"
+                },
+                {
+                  "Action": "elasticloadbalancing:*",
+                  "Effect": "Allow",
+                  "Resource": "*"
+                }
+              ],
+              "Version": "2012-10-17"
+            },
+            "PolicyName": "root"
+          }
+        ]
+      },
+      "Type": "AWS::IAM::Role"
+    },
+    "IAMRoleWorker": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sts:AssumeRole"
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.amazonaws.com"
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": "ec2:Describe*",
+                  "Effect": "Allow",
+                  "Resource": "*"
+                },
+                {
+                  "Action": "ec2:AttachVolume",
+                  "Effect": "Allow",
+                  "Resource": "*"
+                },
+                {
+                  "Action": "ec2:DetachVolume",
+                  "Effect": "Allow",
+                  "Resource": "*"
+                }
+              ],
+              "Version": "2012-10-17"
+            },
+            "PolicyName": "root"
+          }
+        ]
+      },
+      "Type": "AWS::IAM::Role"
+    },
+    "MasterInstance": {
+      "Properties": {
+        "AvailabilityZone": { "Fn::Select" : [ "0", { "Fn::GetAZs" : "" } ] },
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/xvda",
+            "Ebs": {
+              "VolumeSize": { "Ref": "MasterRootVolumeSize"}
+            }
+          }
+        ],
+        "IamInstanceProfile": {
+          "Ref": "MasterIAMInstanceProfile"
+        },
+        "ImageId": { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, { "Ref": "CoreOSImageSku" } ]},
+        "InstanceType": { "Ref": "MasterInstanceType" },
+        "KeyName": { "Ref": "SSHKeyPair" },
+        "NetworkInterfaces": [
+          {
+            "AssociatePublicIpAddress": false,
+            "DeleteOnTermination": true,
+            "DeviceIndex": "0",
+            "GroupSet": [
+              {
+                "Ref": "MasterSecurityGroup"
+              }
+            ],
+            "PrivateIpAddress": { "Ref": "MasterHostIP" },
+            "SubnetId": {
+              "Ref": "Subnet"
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "KubernetesCluster",
+            "Value": { "Ref": "ClusterName" }
+          },
+          {
+            "Key": "Name",
+            "Value": { "Ref": "MasterHostName" }
+          }
+        ],
+        "UserData": { "Fn::Base64": { "Ref": "MasterUserData"} }
+      },
+      "Type": "AWS::EC2::Instance"
+    },
+    "WorkerLaunchConfiguration": {
+      "Properties": {
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/xvda",
+            "Ebs": {
+              "VolumeSize": { "Ref": "WorkerRootVolumeSize"} 
+            }
+          }
+        ],
+        "IamInstanceProfile": {
+          "Ref": "WorkerIAMInstanceProfile"
+        },
+        "ImageId": { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, { "Ref": "CoreOSImageSku" } ]},
+        "InstanceType": { "Ref": "WorkerInstanceType" },
+        "KeyName": { "Ref": "SSHKeyPair" },
+        "SecurityGroups": [
+          {
+            "Ref": "WorkerSecurityGroup"
+          }
+        ],
+        "UserData": { "Fn::Base64": { "Ref": "WorkerUserData"} }        
+      },
+      "Type": "AWS::AutoScaling::LaunchConfiguration"
+    },
+    "MasterSecurityGroup": {
+      "Properties": {
+        "GroupDescription": {
+          "Ref": "AWS::StackName"
+        },
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 0,
+            "IpProtocol": "tcp",
+            "ToPort": 65535
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 0,
+            "IpProtocol": "udp",
+            "ToPort": 65535
+          }
+        ],
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 3,
+            "IpProtocol": "icmp",
+            "ToPort": -1
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 22,
+            "IpProtocol": "tcp",
+            "ToPort": 22
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 443,
+            "IpProtocol": "tcp",
+            "ToPort": 443
+          }      
+        ],
+        "Tags": [
+          {
+            "Key": "KubernetesCluster",
+            "Value": { "Ref": "ClusterName" }
+          }
+        ],
+        "VpcId": {
+          "Ref": "Vnet"
+        }
+      },
+      "Type": "AWS::EC2::SecurityGroup"
+    },
+    "MasterSecurityGroupIngressFromWorkerToEtcd": {
+      "Properties": {
+        "FromPort": 2379,
+        "GroupId": {
+          "Ref": "MasterSecurityGroup"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "WorkerSecurityGroup"
+        },
+        "ToPort": 2379
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "MasterSecurityGroupIngressFromWorkerToFlannel": {
+      "Properties": {
+        "FromPort": 8472,
+        "GroupId": {
+          "Ref": "MasterSecurityGroup"
+        },
+        "IpProtocol": "udp",
+        "SourceSecurityGroupId": {
+          "Ref": "WorkerSecurityGroup"
+        },
+        "ToPort": 8472
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },    
+    "WorkerSecurityGroup": {
+      "Properties": {
+        "GroupDescription": {
+          "Ref": "AWS::StackName"
+        },
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 0,
+            "IpProtocol": "tcp",
+            "ToPort": 65535
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 0,
+            "IpProtocol": "udp",
+            "ToPort": 65535
+          }
+        ],
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 3,
+            "IpProtocol": "icmp",
+            "ToPort": -1
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 22,
+            "IpProtocol": "tcp",
+            "ToPort": 22
+          }                                      
+        ],
+        "Tags": [
+          {
+            "Key": "KubernetesCluster",
+            "Value": { "Ref": "ClusterName" }
+          }
+        ],
+        "VpcId": {
+          "Ref": "Vnet"
+        }
+      },
+      "Type": "AWS::EC2::SecurityGroup"
+    },
+    "WorkerSecurityGroupIngressFromMasterToFlannel": {
+      "Properties": {
+        "FromPort": 8472,
+        "GroupId": {
+          "Ref": "WorkerSecurityGroup"
+        },
+        "IpProtocol": "udp",
+        "SourceSecurityGroupId": {
+          "Ref": "MasterSecurityGroup"
+        },
+        "ToPort": 8472
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },    
+    "WorkerSecurityGroupIngressFromMasterToKubelet": {
+      "Properties": {
+        "FromPort": 10250,
+        "GroupId": {
+          "Ref": "WorkerSecurityGroup"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "MasterSecurityGroup"
+        },
+        "ToPort": 10250
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },  
+    "WorkerSecurityGroupIngressFromMasterTocAdvisor": {
+      "Properties": {
+        "FromPort": 4194,
+        "GroupId": {
+          "Ref": "WorkerSecurityGroup"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "MasterSecurityGroup"
+        },
+        "ToPort": 4194
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },        
+    "WorkerSecurityGroupIngressSelfFlannel": {
+      "Properties": {
+        "FromPort": 8472,
+        "GroupId": {
+          "Ref": "WorkerSecurityGroup"
+        },
+        "IpProtocol": "udp",
+        "SourceSecurityGroupId": {
+          "Ref": "WorkerSecurityGroup"
+        },
+        "ToPort": 8472
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "WorkerSecurityGroupIngressSelfKubeletReadOnly": {
+      "Properties": {
+        "FromPort": 10255,
+        "GroupId": {
+          "Ref": "WorkerSecurityGroup"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "WorkerSecurityGroup"
+        },
+        "ToPort": 10255
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "Subnet": {
+      "Properties": {
+        "AvailabilityZone": { "Fn::Select" : [ "0", { "Fn::GetAZs" : "" } ] },
+        "CidrBlock": { "Ref": "SubnetCIDR"},
+        "MapPublicIpOnLaunch": true,
+        "Tags": [
+          {
+            "Key": "KubernetesCluster",
+            "Value": { "Ref": "ClusterName" }
+          }
+        ],
+        "VpcId": {
+          "Ref": "Vnet"
+        }
+      },
+      "Type": "AWS::EC2::Subnet"
+    },
+    "Vnet": {
+      "Properties": {
+        "CidrBlock": { "Ref" : "VnetCIDR" },
+        "EnableDnsHostnames": true,
+        "EnableDnsSupport": true,
+        "InstanceTenancy": "default",
+        "Tags": [
+          {
+            "Key": "KubernetesCluster",
+            "Value": { "Ref": "ClusterName" }
+          },
+          {
+            "Key": "Name",
+            "Value": { "Fn::Join": [ "-", [ "kubernetes", { "Ref": "ClusterName" }, "vpc" ] ] }
+          }
+        ]
+      },
+      "Type": "AWS::EC2::VPC"
+    },
+    "RouteTable": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "KubernetesCluster",
+            "Value": { "Ref": "ClusterName" }
+          }
+        ],
+        "VpcId": {
+          "Ref": "Vnet"
+        }
+      },
+      "Type": "AWS::EC2::RouteTable"
+    },
+    "RouteToInternet": {
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "InternetGateway"
+        },
+        "RouteTableId": { "Ref" : "RouteTable" }
+      },
+      "Type": "AWS::EC2::Route"
+    },
+    "InternetGateway": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "KubernetesCluster",
+            "Value": { "Ref": "ClusterName" }
+          }
+        ]
+      },
+      "Type": "AWS::EC2::InternetGateway"
+    },
+    "VPCGatewayAttachment": {
+      "Properties": {
+        "InternetGatewayId": {
+          "Ref": "InternetGateway"
+        },
+        "VpcId": {
+          "Ref": "Vnet"
+        }
+      },
+      "Type": "AWS::EC2::VPCGatewayAttachment"
+    },
+    "SubnetRouteTableAssociation": {
+      "Properties": {
+        "RouteTableId": { "Ref" : "RouteTable"},
+        "SubnetId": {
+          "Ref": "Subnet"
+        }
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation"
+    }
+  }
+}

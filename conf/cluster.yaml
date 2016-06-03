@@ -1,0 +1,58 @@
+# common settings internally referred by resources and kubernetes
+variables:
+  cluster_name: awskube
+  master_hostip: 192.168.0.4
+  region: us-west-2
+  coreos_image_sku: alpha
+
+resources:
+  master_count: 1
+  worker_count: 2
+  master_instance_type: m3.medium
+  worker_instance_type: m3.medium
+  master_rootvolume_size: 30
+  worker_rootvolume_size: 30
+  vnet_name: <%= cluster_name %>VNet
+  vnet_cidr: "192.168.0.0/16"
+  subnet_cidr: "192.168.0.0/24"
+  master_hostname: <%= cluster_name %>-master00
+  master_ip: <%= master_hostip %>
+  expose_ports: 
+    - 3443
+    - 8080
+    - 3000
+    - 4040
+    - 6066
+  ssh_keyname: <%= cluster_name %>_ssh
+# rules of masterSG
+  
+# following settings are for kubernetes/coreos/flanneld/cert system components
+kubernetes:
+  k8s_version: v1.2.3
+  pod_cidr: 10.2.0.0/16
+  service_cidr: 10.3.0.0/24
+  api_service_ip: 10.3.0.1
+  dns_service_ip: 10.3.0.10
+  kube_master_hostname: <%= cluster_name %>-master00
+  kube_master_ip: <%= master_hostip %>
+  kube_master_port: 3080
+  kube_master_secure_port: 3443  
+  kube_service_fqdn: <%= cluster_name %>-cluster.compute-1.amazonaws.com
+
+# refer to kubernetes section for various certificates
+credentials:
+  ca_name: <%= cluster_name %>
+  master_alt_names:
+    - DNS.1 = kubernetes
+    - DNS.2 = kubernetes.default
+    - DNS.3 = kubernetes.default.svc
+    - DNS.4 = kubernetes.default.svc.cluster.local
+    - DNS.5 = <%= cluster_name %>-cluster.compute-1.amazonaws.com
+    - DNS.6 = <%= cluster_name %>-master00
+    - IP.1 = 10.3.0.1
+    - IP.2 = <%= master_hostip %>
+  worker_alt_names:
+    - DNS.1 = *.<%= region %>.compute.internal
+    - DNS.2 = *.*.compute.internal
+    
+# <ip>.<region>.compute.internal

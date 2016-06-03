@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kube-apiserver
+  namespace: kube-system
+spec:
+  hostNetwork: true
+  containers:
+  - name: kube-apiserver
+    image: gcr.io/google_containers/hyperkube:<%= k8s_version %>
+    command:
+    - /hyperkube
+    - apiserver
+    - --admission_control=NamespaceLifecycle,LimitRanger,SecurityContextDeny,ServiceAccount,ResourceQuota
+    - --tls-cert-file=/etc/kubernetes/ssl/apiserver.pem
+    - --tls-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem
+    - --client-ca-file=/etc/kubernetes/ssl/ca.pem
+    - --service-account-key-file=/etc/kubernetes/ssl/apiserver-key.pem
+    - --authorization-mode=ABAC
+    - --authorization-policy-file=/etc/kubernetes/auth/auth_policy
+    - --insecure-port=<%= kube_master_port %>
+    - --insecure-bind-address=0.0.0.0
+    - --secure-port=<%= kube_master_secure_port %>
+    - --bind-address=0.0.0.0
+    - --advertise-address=$private_ipv4
+    - --service-cluster-ip-range=<%= service_cidr %>
+    - --etcd_servers=http://127.0.0.1:2379
+    - --allow-privileged=true
+    ports:
+    - containerPort: <%= kube_master_secure_port %>
+      hostPort: <%= kube_master_secure_port %>
+      name: https
+    - containerPort: <%= kube_master_port %>
+      hostPort: <%= kube_master_port %>
+      name: local
+    volumeMounts:
+    - mountPath: /etc/kubernetes/ssl
+      name: ssl-certs-kubernetes
+      readOnly: true
+    - mountPath: /etc/ssl/certs
+      name: ssl-certs-host
+      readOnly: true
+    - mountPath: /etc/kubernetes/auth
+      name: auth-config
+      readOnly: true
+  volumes:
+  - hostPath:
+      path: /etc/kubernetes/ssl
+    name: ssl-certs-kubernetes
+  - hostPath:
+      path: /usr/share/ca-certificates
+    name: ssl-certs-host
+  - hostPath:
+      path: /etc/kubernetes/auth
+    name: auth-config
