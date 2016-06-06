@@ -120,7 +120,7 @@
 		"MasterHostIP" : {
 			"Description" : "Private IP address of the Master node",
 			"Type"        : "String",
-			"Default"     : "<%= master_ip %>",
+			"Default"     : "<%= master_hostip %>",
 			"AllowedPattern" : "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})"
 		},      
     "WorkerHostName" : {

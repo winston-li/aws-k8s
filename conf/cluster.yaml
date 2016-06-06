@@ -1,11 +1,7 @@
-# common settings internally referred by resources and kubernetes
-variables:
-  cluster_name: awskube
-  master_hostip: 192.168.0.4
-  region: us-west-2
-  coreos_image_sku: alpha
-
+# infra settings
 resources:
+  cluster_name: awskube
+  region: us-west-2
   master_count: 1
   worker_count: 2
   master_instance_type: m3.medium
@@ -16,7 +12,8 @@ resources:
   vnet_cidr: "192.168.0.0/16"
   subnet_cidr: "192.168.0.0/24"
   master_hostname: <%= cluster_name %>-master00
-  master_ip: <%= master_hostip %>
+  master_hostip: 192.168.0.4
+  coreos_image_sku: alpha
   expose_ports: 
     - 3443
     - 8080
@@ -24,9 +21,8 @@ resources:
     - 4040
     - 6066
   ssh_keyname: <%= cluster_name %>_ssh
-# rules of masterSG
   
-# following settings are for kubernetes/coreos/flanneld/cert system components
+# settings for kubernetes/coreos/flanneld/cert system components
 kubernetes:
   k8s_version: v1.2.3
   pod_cidr: 10.2.0.0/16
