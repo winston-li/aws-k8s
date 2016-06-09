@@ -33,7 +33,7 @@ kubernetes:
   kube_master_ip: <%= master_hostip %>
   kube_master_port: 3080
   kube_master_secure_port: 3443  
-  kube_service_fqdn: <%= cluster_name %>-cluster.compute-1.amazonaws.com
+  kube_service_fqdn: <%= cluster_name %>-master00.<%= region %>.compute.amazonaws.com
 
 # refer to kubernetes section for various certificates
 credentials:
@@ -43,7 +43,7 @@ credentials:
     - DNS.2 = kubernetes.default
     - DNS.3 = kubernetes.default.svc
     - DNS.4 = kubernetes.default.svc.cluster.local
-    - DNS.5 = <%= cluster_name %>-cluster.compute-1.amazonaws.com
+    - DNS.5 = <%= cluster_name %>-master00.<%= region %>.compute.amazonaws.com
     - DNS.6 = <%= cluster_name %>-master00
     - IP.1 = 10.3.0.1
     - IP.2 = <%= master_hostip %>

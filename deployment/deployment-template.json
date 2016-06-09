@@ -184,7 +184,6 @@
     },
     "WorkerAutoScale": {
       "Properties": {
-        "AvailabilityZones": { "Fn::Select" : [ "0", { "Fn::GetAZs" : "" } ] },
         "DesiredCapacity": { "Ref": "WorkerCount" },
         "HealthCheckGracePeriod": 600,
         "HealthCheckType": "EC2",

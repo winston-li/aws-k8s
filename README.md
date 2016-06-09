@@ -142,7 +142,8 @@
     ```
 
 2. CloudFormation has Parameter value < 4096 bytes limitation, since our UserData is larger than 4K, we need to place it in Resources directly.
-3. ToDo:
+3. EC2's UserData must be less than 16KB, gzip our UserData first, then base64 encode it.
+4. ToDo:
    (1) WorkerAutoScale's CreationPolicy
    (2) Scaling SOP
    (3) Master & Worker Hostname
