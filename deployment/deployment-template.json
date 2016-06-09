@@ -433,7 +433,7 @@
         "SecurityGroupIngress": [
           {
             "CidrIp": "0.0.0.0/0",
-            "FromPort": 3,
+            "FromPort": -1,
             "IpProtocol": "icmp",
             "ToPort": -1
           },
@@ -462,7 +462,7 @@
       },
       "Type": "AWS::EC2::SecurityGroup"
     },
-    "MasterSecurityGroupIngressFromWorkerToEtcd": {
+    "MasterSecurityGroupIngressFromWorkerToEtcdClient": {
       "Properties": {
         "FromPort": 2379,
         "GroupId": {
@@ -473,6 +473,20 @@
           "Ref": "WorkerSecurityGroup"
         },
         "ToPort": 2379
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "MasterSecurityGroupIngressFromWorkerToEtcdPeer": {
+      "Properties": {
+        "FromPort": 2380,
+        "GroupId": {
+          "Ref": "MasterSecurityGroup"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "WorkerSecurityGroup"
+        },
+        "ToPort": 2380
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
     },
@@ -512,7 +526,7 @@
         "SecurityGroupIngress": [
           {
             "CidrIp": "0.0.0.0/0",
-            "FromPort": 3,
+            "FromPort": -1,
             "IpProtocol": "icmp",
             "ToPort": -1
           },

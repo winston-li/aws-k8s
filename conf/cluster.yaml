@@ -45,10 +45,13 @@ credentials:
     - DNS.4 = kubernetes.default.svc.cluster.local
     - DNS.5 = <%= cluster_name %>-master00.<%= region %>.compute.amazonaws.com
     - DNS.6 = <%= cluster_name %>-master00
+    - DNS.7 = *.<%= region %>.compute.amazonaws.com
     - IP.1 = 10.3.0.1
     - IP.2 = <%= master_hostip %>
   worker_alt_names:
     - DNS.1 = *.<%= region %>.compute.internal
     - DNS.2 = *.*.compute.internal
-    
-# <ip>.<region>.compute.internal
+
+# AWS EC2 DNS scheme:
+# - Public DNS: ec2-52-37-3-73.us-west-2.compute.amazonaws.com
+# - Private DNS:  ip-192-168-0-4.us-west-2.compute.internal

@@ -141,11 +141,14 @@
                 .WorkerSecurityGroup
     ```
 
-2. CloudFormation has Parameter value < 4096 bytes limitation, since our UserData is larger than 4K, we need to place it in Resources directly.
-3. EC2's UserData must be less than 16KB, gzip our UserData first, then base64 encode it.
-4. ToDo:
-   (1) WorkerAutoScale's CreationPolicy
-   (2) Scaling SOP
-   (3) Master & Worker Hostname
-   (4) FQDN of Master
-   (5) Condition & Wait while creating resources
+2. CloudFormation has a limitation of "Parameter value < 4096 bytes", since our UserData is larger than 4K, we need to place it in Resources directly. In addition, EC2's UserData must be less than 16KB, so, gzip our UserData first, then base64 encode it.
+
+3. ToDo:
+
+    (1) Figure out how to setup Master's Hostname & FQDN for coreos in AWS EC2
+
+    (2) WorkerAutoScale's CreationPolicy
+
+    (3) Scaling SOP
+
+    (4) Condition & Wait while creating resources
