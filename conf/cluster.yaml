@@ -55,8 +55,12 @@ credentials:
 # NOTE:
 # AWS EC2 DNS scheme:
 # - Public DNS:
-#   -- in us-east-1: ec2-54-174-185-169.compute-1.amazonaws.com
-#   -- in others: ec2-52-37-3-73.us-west-2.compute.amazonaws.com
+#   -- in us-east-1: ec2-xxx-xxx-xxx-xxx.compute-1.amazonaws.com
+#                    e.g. ec2-54-174-185-169.compute-1.amazonaws.com
+#   -- in others: ec2-xxx-xxx-xxx-xxx.<region>.compute.amazonaws.com
+#                 e.g. ec2-52-37-3-73.us-west-2.compute.amazonaws.com
 # - Private DNS:
-#   -- in us-east-1: ip-192-168-0-4.ec2.internal
-#   -- in others: ip-192-168-0-4.us-west-2.compute.internal
+#   -- in us-east-1: ip-xxx-xxx-xxx-xxx.ec2.internal
+#                    e.g. ip-192-168-0-4.ec2.internal
+#   -- in others: ip-xxx-xxx-xxx-xxx.<region>.compute.internal
+#                 e.g. ip-192-168-0-4.us-west-2.compute.internal
