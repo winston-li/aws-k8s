@@ -22,21 +22,81 @@
         Default region name [us-west-1]:
         Default output format [table]:
 
-### 4. Create the cluster:
-    (1) create SSH Key Pair via AWS Management Console (keyname: <cluster_name>_ssh, e.g. kube_ssh)
-    (2) 
+### 4. Create the cluster template file:
+    (1) create and download SSH Key Pair via AWS Management Console (keyname: <cluster_name>_ssh, e.g. kube_ssh)
+    (2) Winstonteki-MacBook-Air:aws-k8s Winston$ ./create-kubernetes-cluster-template.js
     
-###  5. Check cluster status
+### 5. Validate the template file:
+        Winstonteki-MacBook-Air:aws-k8s Winston$ aws cloudformation validate-template --template-body file:///Users/Winston/GitHub/aws-k8s/output/awskube_deployment.json
 
-### 6. Enable browsers to access Spark UI on Azure, add an entry to your DNS server
+### 6. Create the cluster via template file:
+        Use CloudFormation Management Console for now.
+        [TODO: AWS CLI below]
+        Winstonteki-MacBook-Air:aws-k8s Winston$ aws cloudformation create-stack --stack-name myteststack --template-body file:///Users/Winston/GitHub/aws-k8s/output/awskube_deployment.json
 
-### 7. Scale the cluster when needed:
+### 7. Check cluster status
+        Winstonteki-MacBook-Air:aws-k8s Winston$ vi ~/.kube/config
+        [NOW, TEMPORARILY]
+            - cluster:
+                certificate-authority: /Users/Winston/GitHub/aws-k8s/credentials/awskube/ca/ca.pem
+                server: https://ec2-52-41-61-177.us-west-2.compute.amazonaws.com:3443
+              name: awskube-cluster
+        [EXPECTED, AFTER MASTER FQDN RESOLVED]
+            - cluster:
+                certificate-authority: /Users/Winston/GitHub/aws-k8s/credentials/awskube/ca/ca.pem
+                server: https://awskube-master00.us-west-2.compute.amazonaws.com:3443
+              name: awskube-cluster
 
-### 8. Shutdown the cluster:
+        Winstonteki-MacBook-Air:aws-k8s Winston$ kubectl get nodes
+            NAME                                          LABELS                                                               STATUS    AGE
+            ip-192-168-0-111.us-west-2.compute.internal   kubernetes.io/hostname=ip-192-168-0-111.us-west-2.compute.internal   Ready     2m
+            ip-192-168-0-112.us-west-2.compute.internal   kubernetes.io/hostname=ip-192-168-0-112.us-west-2.compute.internal   Ready     2m
 
-### 9. Startup the cluster:
+        Winstonteki-MacBook-Air:aws-k8s Winston$ kubectl get namespaces
+            NAME          LABELS    STATUS    AGE
+            default       <none>    Active    2m
+            develop       <none>    Active    2m
+            kube-system   <none>    Active    2m
+            production    <none>    Active    2m
+            staging       <none>    Active    2m
 
-### 10. Destroy the cluster:
+        Winstonteki-MacBook-Air:aws-k8s Winston$ kubectl get services --all-namespaces
+            NAMESPACE     NAME         CLUSTER_IP   EXTERNAL_IP   PORT(S)         SELECTOR           AGE
+            default       kubernetes   10.3.0.1     <none>        443/TCP         <none>             3m
+            kube-system   heapster     10.3.0.127   <none>        80/TCP          k8s-app=heapster   3m
+            kube-system   kube-dns     10.3.0.10    <none>        53/UDP,53/TCP   k8s-app=kube-dns   3m
+
+        Winstonteki-MacBook-Air:aws-k8s Winston$ kubectl get pods --all-namespaces
+            NAMESPACE     NAME                                                     READY     STATUS    RESTARTS   AGE
+            kube-system   heapster-v1.0.2-swbyl                                    1/1       Running   0          3m
+            kube-system   kube-apiserver-awskube-master00                          1/1       Running   0          22s
+            kube-system   kube-controller-manager-awskube-master00                 1/1       Running   0          24s
+            kube-system   kube-dns-v11-3e7de                                       4/4       Running   0          3m
+            kube-system   kube-proxy-awskube-master00                              1/1       Running   0          22s
+            kube-system   kube-proxy-ip-192-168-0-111.us-west-2.compute.internal   1/1       Running   0          3m
+            kube-system   kube-proxy-ip-192-168-0-112.us-west-2.compute.internal   1/1       Running   0          2m
+            kube-system   kube-scheduler-awskube-master00                          1/1       Running   0          23s
+            kube-system   kube-vulcand-rc-e072i                                    0/3       Pending   0          3m
+
+### 8. SSH to each VM to check status if needed
+        (1) Winstonteki-MacBook-Air:aws-k8s Winston$ ssh-add ~/.ssh/awskube_ssh.pem
+        // ssh to master VM
+        (2)
+        [NOW, TEMPORARILY]
+            Winstonteki-MacBook-Air:aws-k8s Winston$ ssh -A -i ~/awskube_ssh.pem core@ec2-52-41-61-177.us-west-2.compute.amazonaws.com
+        [EXPECT, TODO]
+            Winstonteki-MacBook-Air:aws-k8s Winston$ ssh -A -i ~/awskube_ssh.pem core@awskube-master00.us-west-2.compute.amazonaws.com
+        // ssh to worker VMs through master
+        (3) core@kube-master00 ~ $ ssh -A core@ip-192-168-0-111.us-west-2.compute.internal
+
+### 9. Scale up/down the cluster
+
+### 10. Shutdown the cluster:
+
+### 11. Startup the cluster:
+
+### 12. Destroy the cluster:
+        aws cloudformation  delete-stack --stack-name <value>
 
 
 ## NOTES:
@@ -145,7 +205,7 @@
 
 3. ToDo:
 
-    (1) Figure out how to setup Master's Hostname & FQDN for coreos in AWS EC2
+    (1) Figure out how to setup Master's Hostname & FQDN for coreos in AWS EC2 & Route53
 
     (2) WorkerAutoScale's CreationPolicy
 
