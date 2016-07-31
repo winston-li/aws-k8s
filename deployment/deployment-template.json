@@ -4,59 +4,59 @@
   "Mappings": {
     "RegionMap" : {
       "eu-central-1": {
-        "stable": "ami-cfca25a0",
-        "beta": "ami-74b35c1b",
-        "alpha": "ami-3b1cf054"
+        "stable": "ami-7b7a8f14",
+        "beta": "ami-9e788df1",
+        "alpha": "ami-1560947a"
       },
       "ap-northeast-1": {
-        "stable": "ami-72ae4313",
-        "beta": "ami-76917317",
-        "alpha": "ami-802dcde1"
+        "stable": "ami-fcd9209d",
+        "beta": "ami-c1e811a0",
+        "alpha": "ami-dd6c96bc"
       },
       "us-gov-west-1": {
-        "stable": "ami-c42b94a5",
-        "beta": "ami-4b338c2a",
-        "alpha": "ami-9041fef1"
+        "stable": "ami-1d66d87c",
+        "beta": "ami-be69d7df",
+        "alpha": "ami-0f49f76e"
       },
       "ap-northeast-2": {
-        "stable": "ami-83ce05ed",
-        "beta": "ami-b2b972dc",
-        "alpha": "ami-ccaa61a2"
+        "stable": "ami-91de14ff",
+        "beta": "ami-8bde14e5",
+        "alpha": "ami-590cc637"
       },
       "sa-east-1": {
-        "stable": "ami-038c076f",
-        "beta": "ami-65c24909",
-        "alpha": "ami-ee1b9382"
+        "stable": "ami-ef43d783",
+        "beta": "ami-7b108417",
+        "alpha": "ami-82ba2dee"
       },
       "ap-southeast-2": {
-        "stable": "ami-4b7a5428",
-        "beta": "ami-8387a8e0",
-        "alpha": "ami-55f6d936"
+        "stable": "ami-e8e4ce8b",
+        "beta": "ami-32e5cf51",
+        "alpha": "ami-b32d18d0"
       },
       "ap-southeast-1": {
-        "stable": "ami-d704d5b4",
-        "beta": "ami-e1f02182",
-        "alpha": "ami-4c97462f"
+        "stable": "ami-9b00dcf8",
+        "beta": "ami-ab00dcc8",
+        "alpha": "ami-031ec160"
       },
       "us-east-1": {
-        "stable": "ami-6160910c",
-        "beta": "ami-92b640ff",
-        "alpha": "ami-3cf20751"
+        "stable": "ami-368c0321",
+        "beta": "ami-cbf07fdc",
+        "alpha": "ami-e3f561f4"
       },
       "us-west-2": {
-        "stable": "ami-32a85152",
-        "beta": "ami-ee38c68e",
-        "alpha": "ami-c30af5a3"
+        "stable": "ami-cfef22af",
+        "beta": "ami-a0d31ec0",
+        "alpha": "ami-5231fe32"
       },        
       "us-west-1": {
-        "stable": "ami-79473c19",
-        "beta": "ami-530d7633",
-        "alpha": "ami-61e99101"
+        "stable": "ami-bc2465dc",
+        "beta": "ami-7e23621e",
+        "alpha": "ami-53155533"
       },
       "eu-west-1": {
-        "stable": "ami-c36effb0",
-        "beta": "ami-69d7461a",
-        "alpha": "ami-2a118659"
+        "stable": "ami-cbb5d5b8",
+        "beta": "ami-cdb3d3be",
+        "alpha": "ami-e63e5295"
       }
     }
   },

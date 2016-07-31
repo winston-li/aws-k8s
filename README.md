@@ -23,7 +23,7 @@
         Default output format [table]:
 
 ### 4. Create the cluster template file:
-    (1) create and download SSH Key Pair via AWS Management Console (keyname: <cluster_name>_ssh, e.g. kube_ssh)
+    (1) create and download SSH Key Pair via AWS Management Console (keyname: <cluster_name>_ssh, e.g. awskube_ssh)
     (2) Winstonteki-MacBook-Air:aws-k8s Winston$ ./create-kubernetes-cluster-template.js
     
 ### 5. Validate the template file:
@@ -31,8 +31,8 @@
 
 ### 6. Create the cluster via template file:
         Use CloudFormation Management Console for now.
-        [TODO: AWS CLI below]
-        Winstonteki-MacBook-Air:aws-k8s Winston$ aws cloudformation create-stack --stack-name myteststack --template-body file:///Users/Winston/GitHub/aws-k8s/output/awskube_deployment.json
+        OR
+        Winstonteki-MacBook-Air:aws-k8s Winston$ aws cloudformation create-stack --capabilities CAPABILITY_IAM --stack-name myteststack --template-body file:///Users/Winston/GitHub/aws-k8s/output/awskube_deployment.json
 
 ### 7. Check cluster status
         Winstonteki-MacBook-Air:aws-k8s Winston$ vi ~/.kube/config
@@ -83,9 +83,9 @@
         // ssh to master VM
         (2)
         [NOW, TEMPORARILY]
-            Winstonteki-MacBook-Air:aws-k8s Winston$ ssh -A -i ~/awskube_ssh.pem core@ec2-52-41-61-177.us-west-2.compute.amazonaws.com
+            Winstonteki-MacBook-Air:aws-k8s Winston$ ssh -A -i ~/.ssh/awskube_ssh.pem core@ec2-52-41-61-177.us-west-2.compute.amazonaws.com
         [EXPECT, TODO]
-            Winstonteki-MacBook-Air:aws-k8s Winston$ ssh -A -i ~/awskube_ssh.pem core@awskube-master00.us-west-2.compute.amazonaws.com
+            Winstonteki-MacBook-Air:aws-k8s Winston$ ssh -A -i ~/.ssh/awskube_ssh.pem core@awskube-master00.us-west-2.compute.amazonaws.com
         // ssh to worker VMs through master
         (3) core@kube-master00 ~ $ ssh -A core@ip-192-168-0-111.us-west-2.compute.internal
 
@@ -96,7 +96,7 @@
 ### 11. Startup the cluster:
 
 ### 12. Destroy the cluster:
-        aws cloudformation  delete-stack --stack-name <value>
+        aws cloudformation  delete-stack --stack-name myteststack
 
 
 ## NOTES:
@@ -204,11 +204,14 @@
 2. CloudFormation has a limitation of "Parameter value < 4096 bytes", since our UserData is larger than 4K, we need to place it in Resources directly. In addition, EC2's UserData must be less than 16KB, so, gzip our UserData first, then base64 encode it.
 
 3. ToDo:
+    (1) vulcand pods pending (vulcand must be running at master node)
 
-    (1) Figure out how to setup Master's Hostname & FQDN for coreos in AWS EC2 & Route53
+    (2) Figure out how to setup Master's Hostname & FQDN for coreos in AWS EC2 & Route53
 
-    (2) WorkerAutoScale's CreationPolicy
+    (3) WorkerAutoScale's CreationPolicy
 
-    (3) Scaling SOP
+    (4) Scaling SOP
 
-    (4) Condition & Wait while creating resources
+    (5) Condition & Wait while creating resources
+
+    (6) Delete VPC failed when performed "aws cloudformation delete-stack --stack-name myteststack"

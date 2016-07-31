@@ -4,8 +4,8 @@ resources:
   region: us-west-2
   master_count: 1
   worker_count: 2
-  master_instance_type: m3.medium
-  worker_instance_type: m3.medium
+  master_instance_type: t2.small
+  worker_instance_type: t2.medium
   master_rootvolume_size: 30
   worker_rootvolume_size: 30
   vnet_name: <%= cluster_name %>VNet
